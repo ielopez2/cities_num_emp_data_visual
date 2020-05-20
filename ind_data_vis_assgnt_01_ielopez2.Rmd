@@ -1,0 +1,62 @@
+---
+title: "ind_data_vis_assgnt_01_ielopez2"
+author: "Isaias Lopez"
+date: "2/9/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(DataExplorer)
+library(forcats)
+
+# data wrangling provided by Prof. Kinson
+sba <- read_csv("https://uofi.box.com/shared/static/vi37omgitiaa2yyplrom779qvwk1g14x.csv", 
+                                             col_types = cols(ApprovalDate = col_date(format = "%d-%b-%y"), 
+                                                              BalanceGross = col_number(), ChgOffDate = col_date(format = "%d-%b-%y"), 
+                                                              ChgOffPrinGr = col_number(), DisbursementDate = col_date(format = "%d-%b-%y"), 
+                                                              DisbursementGross = col_number(), 
+                                                              ApprovalFY = col_integer(),
+                                                              GrAppv = col_number(), SBA_Appv = col_number()))
+
+sba_tbl = na.omit(tbl_df(sba))
+
+# grouping and sorting data
+sba_by_city = group_by(.data = sba_tbl, City)
+
+sba_by_city$City = as.factor(sba_by_city$City)
+sba_by_city
+
+uno <- sba_by_city %>% group_by(City) 
+
+uno <-sba_by_city %>%
+        group_by(City) %>%
+        summarize(mean_emp_city = mean(NoEmp), n())
+average_noemp = round(mean(uno$`n()`))
+
+count_sb = which(uno$`n()` > 100)
+
+sba_al_50 = uno[count_sb,]
+
+at_least_50_ordered = sba_al_50[order(sba_al_50$mean_emp_city,decreasing = TRUE),]
+at_least_50_ordered
+
+# data visual
+ ggplot( head(at_least_50_ordered,5), aes(x=City, y=mean_emp_city)) +
+    geom_bar(stat="identity", fill="#f68060", alpha=c(.95,.4,.4,.4,.4), width=.55) +
+    coord_flip() +
+    xlab("") +
+    ylab("") +
+    theme_minimal() +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.ticks = element_blank()) +
+    geom_text(aes(label = round(mean_emp_city)), nudge_y = -3, size = 8, colour = "#FFFFFF") + 
+    annotate("text", x = 2, y = 44, label = "Chicago leads in average number of\nemployees with cities having more\nthan 100 small businesses.", colour = "#0058bd") +
+    annotate("text", x = 5.5, y = 29, label = "Top 5 Cities by Number of Employees in Small Businesses", colour = "#000000", size = 5)
+
+```
+
